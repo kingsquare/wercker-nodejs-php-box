@@ -1,5 +1,5 @@
 name: php-nodejs
-version: 0.0.1
+version: 1.0.0
 inherits: wercker/nodejs@1.4.0
 type : main
 platform : ubuntu@12.04
