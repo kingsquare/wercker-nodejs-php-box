@@ -1,0 +1,127 @@
+name: php-nodejs
+version: 0.0.1
+inherits: wercker/nodejs@1.4.0
+type : main
+platform : ubuntu@12.04
+no-response-timeout: 25
+build:
+    steps:
+        - validate-wercker-box
+
+description : php and nodejs box rolled up into one (with only php55)
+keywords:
+  - php
+  - nodejs
+packages :
+  - php@5.5
+script : |
+  # Add repository that contains php packages
+  sudo add-apt-repository ppa:ondrej/php5 -y
+  sudo apt-get update
+  sudo apt-get install -y php5-cli php5-readline php5-intl
+  echo "PHP version $(php -v) installed"
+
+  # Install composer
+  curl -sS https://getcomposer.org/installer | php
+  sudo mv composer.phar /usr/local/bin/composer
+  sudo chmod +x /usr/local/bin/composer
+  echo "Composer version $(composer --version) installed"
+
+  # Install PHPUnit
+  wget -q https://phar.phpunit.de/phpunit.phar
+  chmod +x phpunit.phar
+  sudo mv phpunit.phar /usr/local/bin/phpunit
+  echo "PHPUnit version $(phpunit --version) installed"
+
+default-build:
+  php-composer-phpunit:
+    priority: 150
+    detect:
+      - files:
+          - composer.json
+          - phpunit.xml
+    text-to-append: |
+      build:
+          # The steps that will be executed on build
+          steps:
+            # A custom script step, name value is used in the UI
+            # and the code value contains the command that get executed
+            - script:
+                name: install dependencies
+                code: composer install --no-interaction --prefer-source
+            - script:
+                name: run unit tests
+                code: phpunit
+  php-phpunit:
+    priority: 125
+    detect:
+      - files:
+        - phpunit.xml
+    text-to-append: |
+      build:
+          # The steps that will be executed on build
+          steps:
+            # A custom script step, name value is used in the UI
+            # and the code value contains the command that get executed
+            #- script:
+            #    name: install dependencies
+            #    code: composer install --no-interaction
+            - script:
+                name: run unit tests
+                code: phpunit
+  php-composer:
+    priority: 100
+    detect:
+      - files:
+          - composer.json
+    text-to-append: |
+      build:
+          # The steps that will be executed on build
+          steps:
+            # A custom script step, name value is used in the UI
+            # and the code value contains the command that get executed
+            - script:
+                name: install dependencies
+                code: composer install --no-interaction
+            - script:
+                name: echo php information
+                code: |
+                  echo "php version $(php --version) running"
+                  echo "from location $(which php)"
+            # Add more steps here:
+            #- script:
+            #    name: run unit tests
+            #    code: phpunit
+  php:
+    priority : 50
+    detect:
+      - default: true
+    text-to-append: |
+      # Build definition
+      build:
+        # The steps that will be executed on build
+        steps:
+          # A custom script step, name value is used in the UI
+          # and the code value contains the command that get executed
+          - script:
+              name: echo php information
+              code: |
+                echo "php version $(php --version) running"
+                echo "from location $(which php)"
+          # Add more steps here:
+          #- script:
+          #    name: run unit tests
+          #    code: phpunit
+
+box-detect:
+  priority: 1200
+  version:
+  detect:
+    - files:
+      - package.json
+    - files:
+      - composer.json
+    - files:
+      - phpunit.xml
+    - files:
+      - index.php
